@@ -1,4 +1,9 @@
 *.pkl
 *.obj
+*.pyc
 __pycache__/
+output/
+.idea/
+.vscode/
 script.py
+main.py
