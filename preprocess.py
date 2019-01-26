@@ -2,15 +2,15 @@ import numpy as np
 import pickle
 import sys
 
-output_path = './model.pkl'
 
 if __name__ == '__main__':
-  if len(sys.argv) < 2:
-    print('Error: expected source model path.')
+  if len(sys.argv) != 3:
+    print('Specify input and output path')
     exit(-1)
   src_path = sys.argv[1]
+  output_path = sys.argv[2]
   with open(src_path, 'rb') as f:
-    src_data = pickle.load(f, encoding="latin1")
+    src_data = pickle.load(f)
   model = {
     'J_regressor': src_data['J_regressor'],
     'weights': np.array(src_data['weights']),
