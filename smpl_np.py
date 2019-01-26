@@ -46,7 +46,8 @@ class SMPLModel():
     self.J = None
     self.R = None
 
-    self.update()
+    self.v_template = self.update()
+    self.verts = self.v_template
 
   def set_params(self, pose=None, beta=None, trans=None):
     """
@@ -75,7 +76,7 @@ class SMPLModel():
       self.beta = beta
     if trans is not None:
       self.trans = trans
-    self.update()
+    self.verts = self.update()
     return self.verts
 
   def update(self):
@@ -96,25 +97,13 @@ class SMPLModel():
     v_posed = v_shaped + self.posedirs.dot(lrotmin)
     # world ransformation of each joint
     G = np.empty((self.kintree_table.shape[1], 4, 4))
-    zero_G = np.empty((self.kintree_table.shape[1], 4, 4))
-
     G[0] = self.with_zeros(
         np.hstack((self.R[0], self.J[0, :].reshape([3, 1]))))
-    zero_G[0] = self.with_zeros(
-        np.hstack((old_R[0], self.J[0, :].reshape([3, 1]))))
     for i in range(1, self.kintree_table.shape[1]):
       G[i] = G[self.parent[i]].dot(
           self.with_zeros(
               np.hstack(
                   [self.R[i],
-                   ((self.J[i, :]-self.J[self.parent[i], :]).reshape([3, 1]))]
-              )
-          )
-      )
-      zero_G[i] = zero_G[self.parent[i]].dot(
-          self.with_zeros(
-              np.hstack(
-                  [old_R[i],
                    ((self.J[i, :]-self.J[self.parent[i], :]).reshape([3, 1]))]
               )
           )
@@ -126,13 +115,11 @@ class SMPLModel():
             np.hstack([self.J, np.zeros([24, 1])]).reshape([24, 4, 1])
         )
     )
-    # for i in range(self.kintree_table.shape[1]):
-      # G[i] = G[i].dot(np.linalg.inv(zero_G[i]))
     # transformation of each vertex
     T = np.tensordot(self.weights, G, axes=[[1], [0]])
     rest_shape_h = np.hstack((v_posed, np.ones([v_posed.shape[0], 1])))
     v = np.matmul(T, rest_shape_h.reshape([-1, 4, 1])).reshape([-1, 4])[:, :3]
-    self.verts = v + self.trans.reshape([1, 3])
+    return v + self.trans.reshape([1, 3])
 
   def rodrigues(self, r):
     """
